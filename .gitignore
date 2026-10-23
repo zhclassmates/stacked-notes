@@ -1,0 +1,22 @@
+# 虚拟环境与缓存
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 系统文件
+.DS_Store
+
+# 日志与临时文件
+logs/
+*.tmp
+
+# 原始媒体不入库（保留在原位置，不复制）
+input/pdf/
+input/audio/
+*.mp3
+*.MP3
+*.pdf
+
+# 转换状态（含源文件绝对路径，属本机私有信息；如需共享仓库可改提交）
+# output/.manifest.json
