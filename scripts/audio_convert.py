@@ -37,6 +37,10 @@ def normalize_punctuation(text: str) -> str:
     text = re.sub(rf":(?=[{_CJK}])", "：", text)
     # 句号：句尾半角点（前面是中文、后面是中文/结尾）转全角；保留小数点
     text = re.sub(rf"(?<=[{_CJK}])\.\s*", "。", text)
+    # 段内换行：中文字符之间直接拼接，其余情况转为空格
+    text = re.sub(rf"(?<=[{_CJK}])\s*\n\s*", "", text)
+    text = re.sub(rf"\n(?=[{_CJK}])", "", text)
+    text = text.replace("\n", " ")
     return text
 
 DEFAULT_MODEL = "mlx-community/whisper-large-v3-turbo"
@@ -47,6 +51,17 @@ PARAGRAPH_MAX = 120.0
 # no_speech_prob 高于此值且平均对数概率过低 → 标记为低置信度
 LOW_CONF_LOGPROB = -0.7
 LOW_CONF_NOSPEECH = 0.6
+
+
+def is_hallucination(text: str) -> bool:
+    """检测 Whisper 在静音/音乐段的典型幻觉：单字或短串疯狂重复、替换符。"""
+    if "�" in text:
+        return True
+    if re.search(r"(.)\1{7,}", text):  # 同一字符重复 8 次以上
+        return True
+    if re.search(r"(.{2,4})\1{5,}", text):  # 2-4 字短串重复 6 次以上
+        return True
+    return False
 
 
 @dataclass
@@ -113,7 +128,15 @@ def transcribe_audio(
         if not texts:
             continue
         body = normalize_punctuation("".join(texts))  # 中文无需空格连接
-        mark = " ⚠️（此段音频清晰度低，转写可能不准确）" if para_low else ""
+        halluc = is_hallucination(body)
+        if halluc:
+            low_conf.append(ts)
+        if halluc:
+            mark = " ⚠️（此段疑似静音/音乐，转写内容不可靠）"
+        elif para_low:
+            mark = " ⚠️（此段音频清晰度低，转写可能不准确）"
+        else:
+            mark = ""
         if para_low:
             low_conf.append(ts)
         lines.append(f"**[{ts}]**{mark} {body}")

@@ -93,6 +93,22 @@ class TestManifest:
         assert m.files == {}
 
 
+class TestAudioHelpers:
+    def test_punctuation_fullwidth(self):
+        from audio_convert import normalize_punctuation
+        assert normalize_punctuation("你好,世界!") == "你好，世界！"
+        assert normalize_punctuation("市盈率15.5倍,对吧?") == "市盈率15.5倍，对吧？"
+        assert "3.5%" in normalize_punctuation("收益3.5%")
+
+    def test_hallucination_detection(self):
+        from audio_convert import is_hallucination
+        assert is_hallucination("我说，我说，我说，我说，我说，我说，我说，我说")
+        assert is_hallucination("＾＾＾＾＾＾＾＾＾＾")
+        assert is_hallucination("含有替换符�的文本")
+        assert not is_hallucination("这是正常的中文句子，没有问题。")
+        assert not is_hallucination("哈哈哈哈笑死我了")  # 4 字重复不算
+
+
 class TestScanSource:
     def test_pairing_and_sorting(self, tmp_path):
         (tmp_path / "02｜B.pdf").write_bytes(b"2")
