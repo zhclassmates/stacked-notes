@@ -18,5 +18,5 @@ input/audio/
 *.MP3
 *.pdf
 
-# 转换状态（含源文件绝对路径，属本机私有信息；如需共享仓库可改提交）
-# output/.manifest.json
+# 转换状态（含源文件绝对路径，属本机私有信息，不入公开仓库）
+output/.manifest.json
